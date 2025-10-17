@@ -3,13 +3,15 @@ import sqlite3
 conn = sqlite3.connect('database.db')
 cursor = conn.cursor()
 
-# Criar tabela usuário
+# Criar tabela usuário com pergunta e resposta de segurança
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS Usuario (
     id_usuario INTEGER PRIMARY KEY AUTOINCREMENT,
     nome TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
-    senha TEXT NOT NULL
+    senha TEXT NOT NULL,
+    pergunta_seg TEXT,        -- nova coluna
+    resposta_seg TEXT         -- nova coluna
 )
 ''')
 
@@ -28,4 +30,4 @@ CREATE TABLE IF NOT EXISTS Contato (
 
 conn.commit()
 conn.close()
-print("Banco criado com sucesso!")
+print("Banco criado/atualizado com sucesso!")

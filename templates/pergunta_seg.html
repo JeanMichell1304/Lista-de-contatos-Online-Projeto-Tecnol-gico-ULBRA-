@@ -2,58 +2,33 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Cadastro de Usuário</title>
+    <title>Definir Pergunta de Segurança</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="bg-light">
 
-<!-- Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
   <div class="container">
     <a class="navbar-brand" href="{{ url_for('contatos') }}">Lista de Contatos</a>
     <div class="dropdown d-inline ms-auto">
-      <button class="btn btn-secondary dropdown-toggle" type="button" id="maisOpcoes" data-bs-toggle="dropdown">
+      <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
         <i class="bi bi-list hamburger-icon"></i>
       </button>
       <ul class="dropdown-menu dropdown-menu-end">
         <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
-        <li><a class="dropdown-item" href="{{ url_for('definir_pergunta') }}">Atualizar cadastro</a></li>
+        <li><a class="dropdown-item" href="{{ url_for('definir_pergunta') }}">Atualizar Senha</a></li>
       </ul>
     </div>
   </div>
 </nav>
 
-<div class="container mt-5 pt-5 p-4 bg-white rounded shadow-sm">
-    <h2 class="mb-4">Cadastro de Usuário</h2>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="alert alert-{{ category }} alert-dismissible fade show">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
-
+<div class="container mt-5 pt-5 p-4 bg-white rounded shadow-sm" style="max-width:600px;">
+    <h2 class="mb-4">Definir Pergunta de Segurança</h2>
     <form method="POST">
         <div class="mb-3">
-            <label>Nome</label>
-            <input type="text" class="form-control" name="nome" required>
-        </div>
-        <div class="mb-3">
-            <label>Email</label>
-            <input type="email" class="form-control" name="email" required>
-        </div>
-        <div class="mb-3">
-            <label>Senha</label>
-            <input type="password" class="form-control" name="senha" required>
-        </div>
-        <div class="mb-3">
-            <label>Pergunta de Segurança</label>
+            <label>Pergunta</label>
             <select class="form-select" name="pergunta_seg" required>
                 <option value="" selected disabled>Selecione a pergunta</option>
                 <option value="Qual é o nome do seu melhor amigo(a) da infância?">Qual é o nome do seu melhor amigo(a) da infância?</option>
@@ -66,9 +41,8 @@
             <label>Resposta</label>
             <input type="text" class="form-control" name="resposta_seg" placeholder="Digite a resposta" required>
         </div>
-
-        <button type="submit" class="btn btn-primary">Cadastrar</button>
-        <a href="{{ url_for('index') }}" class="btn btn-secondary">Voltar</a>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a href="{{ url_for('contatos') }}" class="btn btn-secondary">Voltar</a>
     </form>
 </div>
 

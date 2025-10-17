@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+  <div class="container">
+    <a class="navbar-brand" href="{{ url_for('contatos') }}">Lista de Contatos</a>
+
+    <div class="d-flex ms-auto align-items-center">
+      <!-- Botão de menu hambúrguer -->
+      <div class="dropdown me-2">
+        <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+          <i class="bi bi-list"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><a class="dropdown-item" href="{{ url_for('contatos') }}">Contatos</a></li>
+          <li><a class="dropdown-item" href="{{ url_for('definir_pergunta') }}">Atualizar Cadastro</a></li>
+        </ul>
+      </div>
+
+      <!-- Botão Sair -->
+      <a href="{{ url_for('logout') }}" class="btn btn-danger">Sair</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-5 pt-5">
+  <div class="card shadow-lg p-4">
+    <h2 class="mb-4 text-center">Meu Perfil</h2>
+    <form method="POST">
+      <div class="mb-3">
+        <label class="form-label"><strong>Nome</strong></label>
+        <input type="text" name="nome" class="form-control" value="{{ usuario[0] }}" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label"><strong>Email</strong></label>
+        <input type="email" name="email" class="form-control" value="{{ usuario[1] }}" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label"><strong>Pergunta de Segurança</strong></label>
+        <input type="text" name="pergunta_seg" class="form-control" value="{{ usuario[2] }}">
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label"><strong>Resposta</strong></label>
+        <input type="text" name="resposta_seg" class="form-control" value="{{ usuario[3] }}">
+      </div>
+
+      <div class="d-flex justify-content-between">
+        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+        <a href="{{ url_for('contatos') }}" class="btn btn-secondary">Voltar</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Faz o pop-up (flash message) sumir automaticamente após 5 segundos
+  setTimeout(function() {
+      const alerts = document.querySelectorAll('#flash-container .alert');
+      alerts.forEach(alert => {
+          const bsAlert = new bootstrap.Alert(alert);
+          bsAlert.close();
+      });
+  }, 5000);
+</script>
+{% endblock %}
