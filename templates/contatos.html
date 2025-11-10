@@ -21,7 +21,6 @@
       <ul class="dropdown-menu dropdown-menu-end">
         <li><a class="dropdown-item" href="{{ url_for('perfil') }}">Perfil</a></li>
         <li><a class="dropdown-item" href="/logout">Logout</a></li>
-        <li><a class="dropdown-item" href="{{ url_for('definir_pergunta') }}">Atualizar Senha</a></li>
       </ul>
     </div>
   </div>
@@ -74,14 +73,14 @@
                     <td>{{ contato[3] }}</td>
                     <td>{{ contato[4] }}</td>
                     <td>
-                        <a href="{{ url_for('editar_contato', id=contato[0]) }}" class="btn btn-warning btn-sm">
-                            <i class="bi bi-pencil-square"></i> Editar
-                        </a>
-                       <a href="{{ url_for('excluir_contato', id=contato[0]) }}" class="btn btn-danger btn-sm"
-                          onclick="return confirmarExclusao()">
-                          <i class="bi bi-trash"></i> Excluir
-                        </a>
-
+                      <a href="{{ url_for('editar_contato', id=contato[0]) }}" 
+                        class="btn btn-warning btn-sm" data-bs-toggle="tooltip" title="Editar contato">
+                          <i class="bi bi-pencil-square"></i>
+                      </a>
+                      <a href="{{ url_for('excluir_contato', id=contato[0]) }}" 
+                        class="btn btn-danger btn-sm" onclick="return confirmarExclusao()" data-bs-toggle="tooltip" title="Excluir contato">
+                          <i class="bi bi-trash"></i>
+                      </a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -94,28 +93,16 @@
 <div class="modal fade" id="modalAdicionar" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form method="POST" action="{{ url_for('adicionar_contato') }}">
+      <form id="formAdicionarContato" method="POST" action="{{ url_for('adicionar_contato') }}">
         <div class="modal-header">
           <h5 class="modal-title">Adicionar Contato</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <div class="mb-3">
-            <label>Nome</label>
-            <input type="text" class="form-control" name="nome" required>
-          </div>
-          <div class="mb-3">
-            <label>Telefone</label>
-            <input type="text" class="form-control" name="telefone" required>
-          </div>
-          <div class="mb-3">
-            <label>Email</label>
-            <input type="email" class="form-control" name="email" required>
-          </div>
-          <div class="mb-3">
-            <label>Observação</label>
-            <textarea class="form-control" name="observacao"></textarea>
-          </div>
+              <input type="text" class="form-control mb-3" name="nome" placeholder="Nome completo" required>
+              <input type="text" class="form-control mb-3" name="telefone" placeholder="Telefone (somente números)" required>
+              <input type="email" class="form-control mb-3" name="email" placeholder="Email válido" required>
+              <textarea class="form-control" name="observacao" placeholder="Observações sobre o contato"></textarea>
         </div>
         <div class="modal-footer">
           <button type="submit" class="btn btn-success">Adicionar</button>
@@ -126,15 +113,18 @@
   </div>
 </div>
 
+<!-- SCRIPTS -->
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.5/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.5/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
 <script>
+// DataTable
 $(document).ready(function() {
     $('#tabela-contatos').DataTable({
-        "pageLength": 5, // mostra 5 contatos por página
-        "lengthMenu": [5, 10, 25, 50], // opções de escolha de quantidade
+        "pageLength": 5,
+        "lengthMenu": [5, 10, 25, 50],
         "language": {
             "lengthMenu": "Mostrar _MENU_ contatos por página",
             "zeroRecords": "Nenhum contato encontrado",
@@ -152,11 +142,38 @@ $(document).ready(function() {
     });
 });
 
-</script>
-  <script>
+// Confirmação de exclusão
 function confirmarExclusao() {
     return confirm("Você tem certeza de que gostaria de excluir esse contato?");
 }
+
+// Tooltips
+const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+
+// Máscara de telefone
+$(document).ready(function(){
+    $('#formAdicionarContato input[name="telefone"]').on('input', function(){
+        let value = $(this).val().replace(/\D/g, '');
+        if(value.length > 11) value = value.slice(0,11);
+        if(value.length > 6) {
+            value = `(${value.slice(0,2)}) ${value.slice(2,7)}-${value.slice(7)}`;
+        } else if(value.length > 2) {
+            value = `(${value.slice(0,2)}) ${value.slice(2)}`;
+        }
+        $(this).val(value);
+    });
+});
+
+// Validação antes do submit
+$('#formAdicionarContato').on('submit', function(e) {
+    const tel = $('#formAdicionarContato input[name="telefone"]').val().replace(/\D/g, '');
+    if(tel.length < 10){
+        alert("Telefone incompleto! Digite pelo menos 10 números.");
+        e.preventDefault(); // cancela envio
+        return false;
+    }
+});
 </script>
 
 </body>

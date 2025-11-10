@@ -1,32 +1,49 @@
+from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
 import os
+import re
 
+# -------------------------------
+# Função para validar senha
+# -------------------------------
+def validar_senha(senha):
+    """
+    Valida se a senha é forte:
+    - Pelo menos 8 caracteres
+    - Pelo menos 1 letra maiúscula
+    - Pelo menos 1 número
+    - Pelo menos 1 símbolo
+    Retorna lista de erros (ou lista vazia se estiver ok)
+    """
+    erros = []
+    if len(senha) < 8:
+        erros.append("A senha deve ter pelo menos 8 caracteres.")
+    if not re.search(r"[A-Z]", senha):
+        erros.append("A senha deve ter pelo menos uma letra maiúscula.")
+    if not re.search(r"[0-9]", senha):
+        erros.append("A senha deve ter pelo menos um número.")
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", senha):
+        erros.append("A senha deve ter pelo menos um símbolo especial.")
+    return erros
 
+# -------------------------------
+# Configuração do Flask
+# -------------------------------
 app = Flask(__name__)
 app.secret_key = "sua_chave_secreta"
-
-# Pasta para upload de fotos de contatos
-UPLOAD_FOLDER = 'static/uploads'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
 
 # -------------------------------
 # Função para formatar telefone
 # -------------------------------
 def formatar_telefone(numero):
-    """
-    Recebe um número como string ou int (ex: 51983518862) 
-    e retorna no formato (51) 9 8351-8862
-    """
-    numero = str(numero)  # garante que seja string
-    if len(numero) == 11:  # formato com DDD + 9 + 8 dígitos
+    numero = str(numero)
+    if len(numero) == 11:
         return f"({numero[:2]}) {numero[2]} {numero[3:7]}-{numero[7:]}"
-    elif len(numero) == 10:  # formato com DDD + 8 dígitos
+    elif len(numero) == 10:
         return f"({numero[:2]}) {numero[2:6]}-{numero[6:]}"
     else:
-        return numero  # retorna como está se não tiver 10 ou 11 dígitos
+        return numero
 
 # -------------------------------
 # Inicializa banco de dados
@@ -35,7 +52,6 @@ def inicializar_banco():
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
 
-    # Tabela Usuario
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS Usuario (
         id_usuario INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,7 +63,6 @@ def inicializar_banco():
     )
     ''')
 
-    # Tabela Contato
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS Contato (
         id_contato INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,16 +70,9 @@ def inicializar_banco():
         telefone TEXT NOT NULL,
         email TEXT NOT NULL,
         observacao TEXT,
-        id_usuario INTEGER NOT NULL,
-        foto TEXT
+        id_usuario INTEGER NOT NULL
     )
     ''')
-
-    # Garante que coluna 'foto' existe (em bancos antigos)
-    try:
-        cursor.execute("ALTER TABLE Contato ADD COLUMN foto TEXT")
-    except sqlite3.OperationalError:
-        pass  # já existe
 
     conn.commit()
     conn.close()
@@ -78,13 +86,27 @@ inicializar_banco()
 def index():
     return render_template('index.html')
 
+# -------------------------------
 # Cadastro de usuário
+# -------------------------------
 @app.route('/cadastro_usuario', methods=['GET', 'POST'])
 def cadastro_usuario():
     if request.method == 'POST':
         nome = request.form['nome']
         email = request.form['email']
         senha = request.form['senha']
+
+        # Aqui pegamos a lista de erros
+        erros_senha = validar_senha(senha)
+        if erros_senha:
+            # Envia cada erro como uma mensagem flash separada
+            for erro in erros_senha:
+                flash(erro, "danger")
+            return render_template('cadastro_usuario.html')
+
+        # Se não houver erros, cria o hash da senha
+        senha_hash = generate_password_hash(senha)
+
         pergunta_seg = request.form.get('pergunta_seg')
         resposta_seg = request.form.get('resposta_seg')
 
@@ -93,7 +115,7 @@ def cadastro_usuario():
         try:
             cursor.execute(
                 "INSERT INTO Usuario (nome, email, senha, pergunta_seg, resposta_seg) VALUES (?, ?, ?, ?, ?)",
-                (nome, email, senha, pergunta_seg, resposta_seg)
+                (nome, email, senha_hash, pergunta_seg, resposta_seg)
             )
             conn.commit()
             conn.close()
@@ -105,7 +127,10 @@ def cadastro_usuario():
     
     return render_template('cadastro_usuario.html')
 
+
+# -------------------------------
 # Login
+# -------------------------------
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -114,13 +139,11 @@ def login():
 
         conn = sqlite3.connect('database.db')
         cursor = conn.cursor()
-        cursor.execute(
-            "SELECT * FROM Usuario WHERE email = ? AND senha = ?", (email, senha)
-        )
+        cursor.execute("SELECT * FROM Usuario WHERE email = ?", (email,))
         user = cursor.fetchone()
         conn.close()
 
-        if user:
+        if user and check_password_hash(user[3], senha):
             session['user_id'] = user[0]
             return redirect(url_for('contatos'))
         else:
@@ -128,7 +151,9 @@ def login():
 
     return render_template('login.html')
 
+# -------------------------------
 # Logout
+# -------------------------------
 @app.route('/logout')
 def logout():
     session.pop('user_id', None)
@@ -149,11 +174,10 @@ def contatos():
     contatos = cursor.fetchall()
     conn.close()
 
-    # Formata o telefone
     contatos_formatados = []
     for c in contatos:
         c = list(c)
-        c[2] = formatar_telefone(c[2])  # coluna telefone
+        c[2] = formatar_telefone(c[2])
         contatos_formatados.append(c)
 
     return render_template('contatos.html', contatos=contatos_formatados)
@@ -169,23 +193,15 @@ def adicionar_contato():
     observacao = request.form['observacao']
     user_id = session['user_id']
 
-    # Upload de foto
-    foto = request.files.get('foto')
-    foto_nome = None
-    if foto and foto.filename != '':
-        foto_nome = secure_filename(foto.filename)
-        foto.save(os.path.join(app.config['UPLOAD_FOLDER'], foto_nome))
-
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
     cursor.execute(
-        "INSERT INTO Contato (nome, telefone, email, observacao, id_usuario, foto) VALUES (?, ?, ?, ?, ?, ?)",
-        (nome, telefone, email, observacao, user_id, foto_nome)
+        "INSERT INTO Contato (nome, telefone, email, observacao, id_usuario) VALUES (?, ?, ?, ?, ?)",
+        (nome, telefone, email, observacao, user_id)
     )
     conn.commit()
     conn.close()
 
-    # Pop-up só na aba de contatos
     flash("Contato adicionado com sucesso!", "success")
     return redirect(url_for('contatos'))
 
@@ -206,32 +222,20 @@ def editar_contato(id):
         email = request.form['email']
         observacao = request.form['observacao']
 
-        # Upload foto
-        foto = request.files.get('foto')
         conn = sqlite3.connect('database.db')
         cursor = conn.cursor()
-        if foto and foto.filename != '':
-            foto_nome = secure_filename(foto.filename)
-            foto.save(os.path.join(app.config['UPLOAD_FOLDER'], foto_nome))
-            cursor.execute(
-                "UPDATE Contato SET nome=?, telefone=?, email=?, observacao=?, foto=? WHERE id_contato=?",
-                (nome, telefone, email, observacao, foto_nome, id)
-            )
-        else:
-            cursor.execute(
-                "UPDATE Contato SET nome=?, telefone=?, email=?, observacao=? WHERE id_contato=?",
-                (nome, telefone, email, observacao, id)
-            )
+        cursor.execute(
+            "UPDATE Contato SET nome=?, telefone=?, email=?, observacao=? WHERE id_contato=?",
+            (nome, telefone, email, observacao, id)
+        )
         conn.commit()
         conn.close()
 
         flash("Contato atualizado com sucesso!", "success")
         return redirect(url_for('contatos'))
 
-    # Formata telefone para exibir no form
     contato = list(contato)
     contato[2] = formatar_telefone(contato[2])
-
     return render_template('form_contato.html', titulo="Editar Contato", botao="Salvar", contato=contato)
 
 @app.route('/excluir_contato/<int:id>')
@@ -282,32 +286,6 @@ def perfil():
     return render_template('perfil.html', usuario=usuario)
 
 # -------------------------------
-# Pergunta de segurança
-# -------------------------------
-@app.route('/definir_pergunta', methods=['GET', 'POST'])
-def definir_pergunta():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    user_id = session['user_id']
-    if request.method == 'POST':
-        pergunta_seg = request.form['pergunta_seg']
-        resposta_seg = request.form['resposta_seg']
-
-        conn = sqlite3.connect('database.db')
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE Usuario SET pergunta_seg = ?, resposta_seg = ? WHERE id_usuario = ?",
-            (pergunta_seg, resposta_seg, user_id)
-        )
-        conn.commit()
-        conn.close()
-        flash("Pergunta de segurança salva com sucesso!", "success")
-        return redirect(url_for('contatos'))
-
-    return render_template('pergunta_seg.html')
-
-# -------------------------------
 # Esqueci minha senha
 # -------------------------------
 @app.route('/esqueci_senha', methods=['GET', 'POST'])
@@ -355,9 +333,15 @@ def nova_senha():
     user_id = session['reset_user_id']
     if request.method == 'POST':
         nova_senha = request.form['senha']
+        erro_senha = validar_senha(nova_senha)
+        if erro_senha:
+            flash(erro_senha, "danger")
+            return render_template('nova_senha.html')
+
+        nova_senha_hash = generate_password_hash(nova_senha)
         conn = sqlite3.connect('database.db')
         cursor = conn.cursor()
-        cursor.execute("UPDATE Usuario SET senha = ? WHERE id_usuario = ?", (nova_senha, user_id))
+        cursor.execute("UPDATE Usuario SET senha = ? WHERE id_usuario = ?", (nova_senha_hash, user_id))
         conn.commit()
         conn.close()
         session.pop('reset_user_id', None)

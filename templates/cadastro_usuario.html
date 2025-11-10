@@ -19,7 +19,6 @@
       </button>
       <ul class="dropdown-menu dropdown-menu-end">
         <li><a class="dropdown-item" href="{{ url_for('logout') }}">Logout</a></li>
-        <li><a class="dropdown-item" href="{{ url_for('definir_pergunta') }}">Atualizar cadastro</a></li>
       </ul>
     </div>
   </div>
@@ -38,6 +37,8 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
+          
+    
 
     <form method="POST">
         <div class="mb-3">
