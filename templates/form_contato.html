@@ -19,13 +19,7 @@
             <label class="form-label">Observação</label>
             <textarea name="observacao" class="form-control">{{ contato[4] if contato else '' }}</textarea>
         </div>
-        <div class="mb-3">
-            <label class="form-label">Foto</label>
-            <input type="file" name="foto" class="form-control">
-            {% if contato and contato[5] %}
-                <img src="{{ url_for('static', filename='uploads/' ~ contato[5]|string) }}" alt="Foto" class="img-thumbnail mt-2" width="150">
-            {% endif %}
-        </div>
+        
         <button type="submit" class="btn btn-primary">{{ botao }}</button>
         <a href="{{ url_for('contatos') }}" class="btn btn-secondary">Voltar</a>
     </form>
