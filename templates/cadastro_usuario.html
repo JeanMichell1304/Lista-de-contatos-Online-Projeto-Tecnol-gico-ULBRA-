@@ -51,8 +51,21 @@
         </div>
         <div class="mb-3">
             <label>Senha</label>
-            <input type="password" class="form-control" name="senha" required>
-        </div>
+            <input type="password" 
+              class="form-control" 
+            name="senha" 
+            required
+            pattern="(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{6,}"
+            title="A senha deve conter ao menos 1 letra maiúscula, 1 número e 1 caractere especial (!@#$%^&*).">
+    
+            <small class="form-text text-muted">
+            A senha deve conter pelo menos:
+          <br>• 1 letra maiúscula
+          <br>• 1 número
+          <br>• 1 caractere especial (!@#$%^&*)
+            </small>
+          </div>
+
         <div class="mb-3">
             <label>Pergunta de Segurança</label>
             <select class="form-select" name="pergunta_seg" required>
